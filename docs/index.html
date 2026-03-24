@@ -27,7 +27,7 @@
   <div style="font-size:11px;font-weight:600;color:#2563eb;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">Garena 台灣 · 玩家聲音儀表板</div>
   <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;">
     <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:0;">週間回饋總覽</h1>
-    <span style="font-size:13px;color:#94a3b8;">2026/03/18 – 2026/03/24&nbsp;&nbsp;·&nbsp;&nbsp;更新：2026-03-24 08:28 UTC</span>
+    <span style="font-size:13px;color:#94a3b8;">2026/03/18 – 2026/03/24&nbsp;&nbsp;·&nbsp;&nbsp;更新：2026-03-24 08:34 UTC</span>
   </div>
 </div>
 
@@ -86,8 +86,7 @@
   </div>
   <div class="card">
     <div class="label-sm">各平台回饋量</div>
-    <canvas id="srcChart" height="220"></canvas>
-    <div id="src-empty" style="font-size:13px;color:#94a3b8;display:none;">本週無資料</div>
+    <div id="srcChartCss" style="padding-top:8px;"></div>
   </div>
 </div>
 
@@ -173,19 +172,27 @@ charts.sent = new Chart(document.getElementById('sentChart'), {
   }
 });
 
-charts.src = new Chart(document.getElementById('srcChart'), {
-  type: 'bar',
-  data: { labels: [], datasets: [{ data: [], backgroundColor: '#bfdbfe', borderRadius: 3, hoverBackgroundColor: '#93c5fd' }] },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { color: TICK_COLOR, font: { size: 10 }, maxRotation: 20 }, grid: { display: false } },
-      y: { ticks: { color: TICK_COLOR, font: { size: 10 } }, grid: { color: GRID_COLOR }, beginAtZero: true }
-    }
+// srcChart: 純 CSS 版，避免 Chart.js 在 0-width 容器初始化失敗
+function renderSrcChart(srcLabels, srcVals) {
+  var container = document.getElementById('srcChartCss');
+  if (!container) return;
+  if (!srcLabels || srcLabels.length === 0) {
+    container.innerHTML = '<span style="color:#94a3b8;font-size:13px;">本週無資料</span>';
+    return;
   }
-});
+  var maxVal = Math.max.apply(null, srcVals) || 1;
+  var html = '';
+  for (var i = 0; i < srcLabels.length; i++) {
+    var pct = Math.round(srcVals[i] / maxVal * 100);
+    html += '<div style="margin-bottom:10px;">'
+          + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:3px;">'
+          + '<span>' + srcLabels[i] + '</span><span style="font-weight:600;color:#0f172a;">' + srcVals[i] + ' 則</span></div>'
+          + '<div style="height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;">'
+          + '<div style="height:100%;width:' + pct + '%;background:#3b82f6;border-radius:4px;transition:width .4s;"></div>'
+          + '</div></div>';
+  }
+  container.innerHTML = html;
+}
 
 // CSS 詞雲（純 HTML span，無外部依賴）
 var WC_COLORS = ['#1d4ed8','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#9333ea','#0284c7'];
@@ -254,19 +261,7 @@ function updateDashboard(data) {
   charts.sent.data.datasets[0].data = data.sent_vals;
   charts.sent.update();
 
-  var srcCanvas = document.getElementById('srcChart');
-  var srcEmpty  = document.getElementById('src-empty');
-  if (data.src_labels && data.src_labels.length > 0) {
-    srcCanvas.style.display = '';
-    srcEmpty.style.display  = 'none';
-    charts.src.data.labels = data.src_labels;
-    charts.src.data.datasets[0].data = data.src_vals;
-    charts.src.update();
-  } else {
-    srcCanvas.style.display = 'none';
-    srcEmpty.style.display  = '';
-  }
-
+  try { renderSrcChart(data.src_labels, data.src_vals); } catch(e) { console.error('srcChart error', e); }
   try { renderWordCloud(data.wordcloud); } catch(e) { console.error('wordcloud error', e); }
 
   document.getElementById('table-title').textContent = '最新回饋明細（' + data.recent.length + ' 則）';
