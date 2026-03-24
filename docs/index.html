@@ -11,169 +11,99 @@
   .card { background:#1e293b; border-radius:12px; padding:20px; }
   .stat-num { font-size:2rem; font-weight:800; line-height:1; }
   canvas { max-height:220px; }
+  .tab-btn { padding:6px 20px; border-radius:8px; font-size:13px; font-weight:600;
+             cursor:pointer; transition:all 0.2s; border:1px solid #334155;
+             color:#94a3b8; background:transparent; }
+  .tab-btn.active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+  .tab-btn:hover:not(.active) { background:#1e293b; color:#e2e8f0; }
 </style>
 </head>
 <body class="min-h-screen p-6">
 
 <!-- Header -->
-<div class="mb-6">
+<div class="mb-4">
   <div class="text-xs tracking-widest text-blue-400 uppercase mb-1">Garena 台灣玩家聲音儀表板</div>
   <h1 class="text-2xl font-bold text-white">週間回饋總覽</h1>
-  <div class="text-sm text-slate-400 mt-1">資料區間：2026/03/18 – 2026/03/24　　最後更新：2026-03-24 02:19 UTC</div>
+  <div class="text-sm text-slate-400 mt-1">資料區間：2026/03/18 – 2026/03/24&nbsp;&nbsp;&nbsp;最後更新：2026-03-24 02:23 UTC</div>
+</div>
+
+<!-- 遊戲切換分頁 -->
+<div class="flex gap-2 mb-6">
+  <button onclick="switchGame('all')"      id="tab-all"      class="tab-btn active">🎮 全部遊戲</button>
+  <button onclick="switchGame('freefire')" id="tab-freefire" class="tab-btn">🔥 Free Fire</button>
+  <button onclick="switchGame('aov')"      id="tab-aov"      class="tab-btn">⚔️ 傳說對決</button>
 </div>
 
 <!-- KPI 卡片 -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
   <div class="card">
     <div class="text-xs text-slate-400 mb-2">本週總回饋</div>
-    <div class="stat-num text-white">6</div>
+    <div class="stat-num text-white" id="kpi-total">0</div>
     <div class="text-xs text-slate-500 mt-1">則</div>
   </div>
   <div class="card">
     <div class="text-xs text-slate-400 mb-2">負面比例</div>
-    <div class="stat-num text-red-400">67%</div>
-    <div class="text-xs text-slate-500 mt-1">4 則</div>
+    <div class="stat-num text-red-400" id="kpi-neg-pct">0%</div>
+    <div class="text-xs text-slate-500 mt-1" id="kpi-neg-n">0 則</div>
   </div>
   <div class="card">
     <div class="text-xs text-slate-400 mb-2">正面比例</div>
-    <div class="stat-num text-green-400">17%</div>
-    <div class="text-xs text-slate-500 mt-1">1 則</div>
+    <div class="stat-num text-green-400" id="kpi-pos-pct">0%</div>
+    <div class="text-xs text-slate-500 mt-1" id="kpi-pos-n">0 則</div>
   </div>
   <div class="card">
     <div class="text-xs text-slate-400 mb-2">活躍來源</div>
-    <div class="stat-num text-blue-400">1</div>
+    <div class="stat-num text-blue-400" id="kpi-sources">0</div>
     <div class="text-xs text-slate-500 mt-1">個平台</div>
   </div>
 </div>
 
-<!-- 圖表區 -->
+<!-- 圖表區 第一行 -->
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-
-  <!-- 每日趨勢 -->
   <div class="card xl:col-span-2">
     <div class="text-xs text-slate-400 uppercase tracking-wider mb-3">每日回饋量趨勢</div>
     <canvas id="trendChart"></canvas>
   </div>
-
-  <!-- 分類分布 -->
   <div class="card">
     <div class="text-xs text-slate-400 uppercase tracking-wider mb-3">回饋分類</div>
     <canvas id="catChart"></canvas>
   </div>
-
-  <!-- 情緒分布 -->
   <div class="card">
     <div class="text-xs text-slate-400 uppercase tracking-wider mb-3">情緒分布</div>
     <canvas id="sentChart"></canvas>
   </div>
-
 </div>
 
-<!-- 第二行圖表 -->
+<!-- 圖表區 第二行 -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-
-  <!-- Top 關鍵詞 -->
   <div class="card">
-    <div class="text-xs text-slate-400 uppercase tracking-wider mb-3">本週熱門關鍵詞 Top 10</div>
-    <canvas id='kwChart'></canvas>
+    <div class="text-xs text-slate-400 uppercase tracking-wider mb-3" id="kw-title">本週熱門關鍵詞</div>
+    <canvas id="kwChart"></canvas>
+    <div id="kw-empty" class="text-slate-500 text-sm hidden">本週無關鍵詞資料</div>
   </div>
-
-  <!-- 來源分布 -->
   <div class="card">
     <div class="text-xs text-slate-400 uppercase tracking-wider mb-3">各平台回饋量</div>
-    <canvas id='srcChart'></canvas>
+    <canvas id="srcChart"></canvas>
+    <div id="src-empty" class="text-slate-500 text-sm hidden">本週無資料</div>
   </div>
-
 </div>
 
 <!-- 最新明細 -->
 <div class="card mb-6">
-  <div class="text-xs text-slate-400 uppercase tracking-wider mb-3">最新回饋明細（最近 6 則）</div>
-  <div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="border-b border-slate-600"><th class="py-2 px-3 text-xs text-slate-500 font-medium">日期</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">分類</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">情緒</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">摘要</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">關鍵詞</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">來源</th></tr></thead><tbody>
-        <tr class="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
-          <td class="py-2 px-3 text-xs text-slate-400 whitespace-nowrap">2026-03-24</td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#F9731622;color:#F97316">客服問題</span>
-          </td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#EF444422;color:#EF4444">負面</span>
-          </td>
-          <td class="py-2 px-3 text-sm text-slate-200 max-w-xs truncate">
-            <a href="https://play.google.com/store/apps/details?id=com.dts.freefireth" target="_blank" class="hover:text-blue-400 transition-colors">玩家反映Facebook帳號遭異常封鎖導致無法登入遊戲，且找不到客服管道進行詢問與申訴。</a>
-          </td>
-          <td class="py-2 px-3 text-xs text-slate-400">帳號封鎖、Facebook登入、客服缺失</td>
-          <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap">Google Play・Free Fire</td>
-        </tr>
-        <tr class="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
-          <td class="py-2 px-3 text-xs text-slate-400 whitespace-nowrap">2026-03-24</td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#EAB30822;color:#EAB308">付費體驗</span>
-          </td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#EF444422;color:#EF4444">負面</span>
-          </td>
-          <td class="py-2 px-3 text-sm text-slate-200 max-w-xs truncate">
-            <a href="https://play.google.com/store/apps/details?id=com.dts.freefireth" target="_blank" class="hover:text-blue-400 transition-colors">玩家表示遊戲整體評價良好，但近期儲值後鑽石未收到，要求官方協助處理。</a>
-          </td>
-          <td class="py-2 px-3 text-xs text-slate-400">儲值、鑽石未到帳、付費問題</td>
-          <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap">Google Play・Free Fire</td>
-        </tr>
-        <tr class="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
-          <td class="py-2 px-3 text-xs text-slate-400 whitespace-nowrap">2026-03-24</td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#8B5CF622;color:#8B5CF6">其他</span>
-          </td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#22C55E22;color:#22C55E">正面</span>
-          </td>
-          <td class="py-2 px-3 text-sm text-slate-200 max-w-xs truncate">
-            <a href="https://play.google.com/store/apps/details?id=com.dts.freefireth" target="_blank" class="hover:text-blue-400 transition-colors">玩家以詩意方式表達自己對遊戲的極度熱愛與沉浸感。</a>
-          </td>
-          <td class="py-2 px-3 text-xs text-slate-400">沉迷遊戲、高度投入</td>
-          <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap">Google Play・Free Fire</td>
-        </tr>
-        <tr class="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
-          <td class="py-2 px-3 text-xs text-slate-400 whitespace-nowrap">2026-03-24</td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#22C55E22;color:#22C55E">遊戲體驗</span>
-          </td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#EF444422;color:#EF4444">負面</span>
-          </td>
-          <td class="py-2 px-3 text-sm text-slate-200 max-w-xs truncate">
-            <a href="https://play.google.com/store/apps/details?id=com.dts.freefireth" target="_blank" class="hover:text-blue-400 transition-colors">玩家遊玩兩個月以來持續落敗，認為系統配對到過強對手，對平衡性感到不滿。</a>
-          </td>
-          <td class="py-2 px-3 text-xs text-slate-400">配對機制、實力不均、連敗</td>
-          <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap">Google Play・Free Fire</td>
-        </tr>
-        <tr class="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
-          <td class="py-2 px-3 text-xs text-slate-400 whitespace-nowrap">2026-03-24</td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#EF444422;color:#EF4444">Bug回報</span>
-          </td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#EF444422;color:#EF4444">負面</span>
-          </td>
-          <td class="py-2 px-3 text-sm text-slate-200 max-w-xs truncate">
-            <a href="https://play.google.com/store/apps/details?id=com.dts.freefireth" target="_blank" class="hover:text-blue-400 transition-colors">玩家身處越南，反映該版本登入後伺服器持續異常，但MAX版本無此問題，懷疑是版本特有Bug。</a>
-          </td>
-          <td class="py-2 px-3 text-xs text-slate-400">伺服器異常、越南地區、登入問題</td>
-          <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap">Google Play・Free Fire</td>
-        </tr>
-        <tr class="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
-          <td class="py-2 px-3 text-xs text-slate-400 whitespace-nowrap">2026-03-24</td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#22C55E22;color:#22C55E">遊戲體驗</span>
-          </td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#94A3B822;color:#94A3B8">中性</span>
-          </td>
-          <td class="py-2 px-3 text-sm text-slate-200 max-w-xs truncate">
-            <a href="https://play.google.com/store/apps/details?id=com.dts.freefireth" target="_blank" class="hover:text-blue-400 transition-colors">玩家認為遊戲各項數值數據表現良好，但畫面品質只屬一般，給予中立評價。</a>
-          </td>
-          <td class="py-2 px-3 text-xs text-slate-400">畫質普通、數據表現佳</td>
-          <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap">Google Play・Free Fire</td>
-        </tr></tbody></table></div>
+  <div class="text-xs text-slate-400 uppercase tracking-wider mb-3" id="table-title">最新回饋明細</div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-left">
+      <thead><tr class="border-b border-slate-600">
+        <th class="py-2 px-3 text-xs text-slate-500 font-medium">日期</th>
+        <th class="py-2 px-3 text-xs text-slate-500 font-medium">分類</th>
+        <th class="py-2 px-3 text-xs text-slate-500 font-medium">情緒</th>
+        <th class="py-2 px-3 text-xs text-slate-500 font-medium">摘要</th>
+        <th class="py-2 px-3 text-xs text-slate-500 font-medium">關鍵詞</th>
+        <th class="py-2 px-3 text-xs text-slate-500 font-medium">來源</th>
+      </tr></thead>
+      <tbody id="recentTbody"></tbody>
+    </table>
+  </div>
 </div>
 
 <!-- Footer -->
@@ -182,65 +112,49 @@
 </div>
 
 <script>
-const chartDefaults = {
-  plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
-  scales: {
-    x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-    y: { ticks: { color: '#64748b' }, grid: { color: '#334155' } }
-  }
-};
+const DATA_ALL = {"total": 6, "neg": 4, "pos": 2, "neg_pct": 67, "pos_pct": 33, "active_sources": 1, "cat_labels": ["客服問題", "活動反應", "Bug回報", "付費體驗", "遊戲體驗", "其他"], "cat_vals": [1, 0, 1, 1, 2, 1], "cat_colors": ["#F97316", "#3B82F6", "#EF4444", "#EAB308", "#22C55E", "#8B5CF6"], "sent_labels": ["正面", "負面", "中性"], "sent_vals": [2, 4, 0], "daily_labels": ["03/18", "03/19", "03/20", "03/21", "03/22", "03/23", "03/24"], "daily_vals": [0, 0, 0, 0, 0, 0, 6], "src_labels": ["Google Play・FF"], "src_vals": [6], "kw_labels": ["儲值", "鑽石未到帳", "付費問題", "沉浸感", "熱愛遊戲", "配對機制", "高手對戰", "平衡性", "越南伺服器", "登入異常"], "kw_vals": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "recent": [{"cat": "付費體驗", "sent": "負面", "src": "Google Play・FF", "summ": "玩家表示遊戲整體評價不錯，但近期儲值後鑽石未到帳，要求官方盡快處理款項問題。", "kws": "儲值、鑽石未到帳、付費問題", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#EAB308", "sent_color": "#EF4444"}, {"cat": "其他", "sent": "正面", "src": "Google Play・FF", "summ": "玩家以詩意方式表達對遊戲的高度沉浸與熱愛，顯示出極強的情感認同。", "kws": "沉浸感、熱愛遊戲", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#8B5CF6", "sent_color": "#22C55E"}, {"cat": "遊戲體驗", "sent": "負面", "src": "Google Play・FF", "summ": "玩家遊玩兩個月卻持續落敗，抱怨匹配系統將新手與高手配對，認為對局不公平。", "kws": "配對機制、高手對戰、平衡性", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#22C55E", "sent_color": "#EF4444"}, {"cat": "Bug回報", "sent": "負面", "src": "Google Play・FF", "summ": "玩家身處越南，反映該版本登入後伺服器持續異常，但MAX版本無相同問題，判斷為版本特有Bug。", "kws": "越南伺服器、登入異常、版本問題", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#EF4444", "sent_color": "#EF4444"}, {"cat": "遊戲體驗", "sent": "正面", "src": "Google Play・FF", "summ": "玩家對遊戲各項數據表現感到滿意，但認為畫質表現僅屬一般，有待提升。", "kws": "遊戲數據、畫質普通", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#22C55E", "sent_color": "#22C55E"}, {"cat": "客服問題", "sent": "負面", "src": "Google Play・FF", "summ": "玩家因Facebook帳號遭異常封鎖導致無法進入遊戲，且找不到客服管道申訴，感到無助。", "kws": "帳號封鎖、無法登入、客服缺失", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#F97316", "sent_color": "#EF4444"}]};
+const DATA_FF  = {"total": 6, "neg": 4, "pos": 2, "neg_pct": 67, "pos_pct": 33, "active_sources": 1, "cat_labels": ["客服問題", "活動反應", "Bug回報", "付費體驗", "遊戲體驗", "其他"], "cat_vals": [1, 0, 1, 1, 2, 1], "cat_colors": ["#F97316", "#3B82F6", "#EF4444", "#EAB308", "#22C55E", "#8B5CF6"], "sent_labels": ["正面", "負面", "中性"], "sent_vals": [2, 4, 0], "daily_labels": ["03/18", "03/19", "03/20", "03/21", "03/22", "03/23", "03/24"], "daily_vals": [0, 0, 0, 0, 0, 0, 6], "src_labels": ["Google Play・FF"], "src_vals": [6], "kw_labels": ["儲值", "鑽石未到帳", "付費問題", "沉浸感", "熱愛遊戲", "配對機制", "高手對戰", "平衡性", "越南伺服器", "登入異常"], "kw_vals": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "recent": [{"cat": "付費體驗", "sent": "負面", "src": "Google Play・FF", "summ": "玩家表示遊戲整體評價不錯，但近期儲值後鑽石未到帳，要求官方盡快處理款項問題。", "kws": "儲值、鑽石未到帳、付費問題", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#EAB308", "sent_color": "#EF4444"}, {"cat": "其他", "sent": "正面", "src": "Google Play・FF", "summ": "玩家以詩意方式表達對遊戲的高度沉浸與熱愛，顯示出極強的情感認同。", "kws": "沉浸感、熱愛遊戲", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#8B5CF6", "sent_color": "#22C55E"}, {"cat": "遊戲體驗", "sent": "負面", "src": "Google Play・FF", "summ": "玩家遊玩兩個月卻持續落敗，抱怨匹配系統將新手與高手配對，認為對局不公平。", "kws": "配對機制、高手對戰、平衡性", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#22C55E", "sent_color": "#EF4444"}, {"cat": "Bug回報", "sent": "負面", "src": "Google Play・FF", "summ": "玩家身處越南，反映該版本登入後伺服器持續異常，但MAX版本無相同問題，判斷為版本特有Bug。", "kws": "越南伺服器、登入異常、版本問題", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#EF4444", "sent_color": "#EF4444"}, {"cat": "遊戲體驗", "sent": "正面", "src": "Google Play・FF", "summ": "玩家對遊戲各項數據表現感到滿意，但認為畫質表現僅屬一般，有待提升。", "kws": "遊戲數據、畫質普通", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#22C55E", "sent_color": "#22C55E"}, {"cat": "客服問題", "sent": "負面", "src": "Google Play・FF", "summ": "玩家因Facebook帳號遭異常封鎖導致無法進入遊戲，且找不到客服管道申訴，感到無助。", "kws": "帳號封鎖、無法登入、客服缺失", "date": "2026-03-24", "url": "https://play.google.com/store/apps/details?id=com.dts.freefireth", "game": "freefire", "cat_color": "#F97316", "sent_color": "#EF4444"}]};
+const DATA_AOV = {"total": 0, "neg": 0, "pos": 0, "neg_pct": 0, "pos_pct": 0, "active_sources": 0, "cat_labels": ["客服問題", "活動反應", "Bug回報", "付費體驗", "遊戲體驗", "其他"], "cat_vals": [0, 0, 0, 0, 0, 0], "cat_colors": ["#F97316", "#3B82F6", "#EF4444", "#EAB308", "#22C55E", "#8B5CF6"], "sent_labels": ["正面", "負面", "中性"], "sent_vals": [0, 0, 0], "daily_labels": ["03/18", "03/19", "03/20", "03/21", "03/22", "03/23", "03/24"], "daily_vals": [0, 0, 0, 0, 0, 0, 0], "src_labels": [], "src_vals": [], "kw_labels": [], "kw_vals": [], "recent": []};
 
-// 每日趨勢
-new Chart(document.getElementById('trendChart'), {
+// ── Chart 初始化 ──────────────────────────────────────────────
+const charts = {};
+
+charts.trend = new Chart(document.getElementById('trendChart'), {
   type: 'line',
-  data: {
-    labels: ["03/18", "03/19", "03/20", "03/21", "03/22", "03/23", "03/24"],
-    datasets: [{
-      label: '回饋則數',
-      data: [0, 0, 0, 0, 0, 0, 6],
-      borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59,130,246,0.15)',
-      borderWidth: 2,
-      fill: true,
-      tension: 0.4,
-      pointBackgroundColor: '#3b82f6',
-      pointRadius: 4,
-    }]
-  },
-  options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } } }
+  data: { labels: [], datasets: [{ label: '回饋則數', data: [],
+    borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.15)',
+    borderWidth: 2, fill: true, tension: 0.4,
+    pointBackgroundColor: '#3b82f6', pointRadius: 4 }] },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+      y: { ticks: { color: '#64748b' }, grid: { color: '#334155' }, beginAtZero: true }
+    }
+  }
 });
 
-// 分類 (橫條)
-new Chart(document.getElementById('catChart'), {
+charts.cat = new Chart(document.getElementById('catChart'), {
   type: 'bar',
   data: {
     labels: ["客服問題", "活動反應", "Bug回報", "付費體驗", "遊戲體驗", "其他"],
-    datasets: [{
-      data: [1, 0, 1, 1, 2, 1],
-      backgroundColor: ["#F97316", "#3B82F6", "#EF4444", "#EAB308", "#22C55E", "#8B5CF6"],
-      borderRadius: 4,
-    }]
+    datasets: [{ data: [], backgroundColor: ["#F97316", "#3B82F6", "#EF4444", "#EAB308", "#22C55E", "#8B5CF6"], borderRadius: 4 }]
   },
   options: {
     indexAxis: 'y',
     plugins: { legend: { display: false } },
     scales: {
-      x: { ticks: { color: '#64748b' }, grid: { color: '#334155' } },
+      x: { ticks: { color: '#64748b' }, grid: { color: '#334155' }, beginAtZero: true },
       y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } }
     }
   }
 });
 
-// 情緒 (donut)
-new Chart(document.getElementById('sentChart'), {
+charts.sent = new Chart(document.getElementById('sentChart'), {
   type: 'doughnut',
   data: {
     labels: ["正面", "負面", "中性"],
-    datasets: [{
-      data: [1, 4, 1],
-      backgroundColor: ["#22C55E", "#EF4444", "#94A3B8"],
-      borderWidth: 0,
-    }]
+    datasets: [{ data: [], backgroundColor: ["#22C55E", "#EF4444", "#94A3B8"], borderWidth: 0 }]
   },
   options: {
     cutout: '60%',
@@ -248,8 +162,113 @@ new Chart(document.getElementById('sentChart'), {
   }
 });
 
-new Chart(document.getElementById('kwChart'), {  type: 'bar',  data: {    labels: ["帳號封鎖", "Facebook登入", "客服缺失", "儲值", "鑽石未到帳", "付費問題", "沉迷遊戲", "高度投入", "配對機制", "實力不均"],    datasets: [{ data: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], backgroundColor: '#8b5cf6', borderRadius: 4 }]  },  options: { indexAxis: 'y', plugins: { legend: { display: false } },    scales: { x: { ticks: { color: '#64748b' }, grid: { color: '#334155' } },              y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } } } }});
-new Chart(document.getElementById('srcChart'), {  type: 'bar',  data: {    labels: ["Google Play・Free Fire"],    datasets: [{ data: [6], backgroundColor: '#06b6d4', borderRadius: 4 }]  },  options: { plugins: { legend: { display: false } },    scales: { x: { ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },              y: { ticks: { color: '#64748b' }, grid: { color: '#334155' } } } }});
+charts.kw = new Chart(document.getElementById('kwChart'), {
+  type: 'bar',
+  data: { labels: [], datasets: [{ data: [], backgroundColor: '#8b5cf6', borderRadius: 4 }] },
+  options: {
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#64748b' }, grid: { color: '#334155' }, beginAtZero: true },
+      y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } }
+    }
+  }
+});
+
+charts.src = new Chart(document.getElementById('srcChart'), {
+  type: 'bar',
+  data: { labels: [], datasets: [{ data: [], backgroundColor: '#06b6d4', borderRadius: 4 }] },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },
+      y: { ticks: { color: '#64748b' }, grid: { color: '#334155' }, beginAtZero: true }
+    }
+  }
+});
+
+// ── 切換遊戲 ──────────────────────────────────────────────────
+function switchGame(game) {
+  ['all', 'freefire', 'aov'].forEach(function(g) {
+    var btn = document.getElementById('tab-' + g);
+    if (g === game) { btn.classList.add('active'); }
+    else { btn.classList.remove('active'); }
+  });
+  var data = (game === 'freefire') ? DATA_FF : (game === 'aov') ? DATA_AOV : DATA_ALL;
+  updateDashboard(data);
+}
+
+function updateDashboard(data) {
+  // KPI
+  document.getElementById('kpi-total').textContent   = data.total;
+  document.getElementById('kpi-neg-pct').textContent = data.neg_pct + '%';
+  document.getElementById('kpi-neg-n').textContent   = data.neg + ' 則';
+  document.getElementById('kpi-pos-pct').textContent = data.pos_pct + '%';
+  document.getElementById('kpi-pos-n').textContent   = data.pos + ' 則';
+  document.getElementById('kpi-sources').textContent = data.active_sources;
+
+  // 趨勢
+  charts.trend.data.labels = data.daily_labels;
+  charts.trend.data.datasets[0].data = data.daily_vals;
+  charts.trend.update();
+
+  // 分類
+  charts.cat.data.datasets[0].data = data.cat_vals;
+  charts.cat.update();
+
+  // 情緒
+  charts.sent.data.datasets[0].data = data.sent_vals;
+  charts.sent.update();
+
+  // 關鍵詞
+  var kwCanvas = document.getElementById('kwChart');
+  var kwEmpty  = document.getElementById('kw-empty');
+  if (data.kw_labels.length > 0) {
+    kwCanvas.style.display = '';
+    kwEmpty.classList.add('hidden');
+    charts.kw.data.labels = data.kw_labels;
+    charts.kw.data.datasets[0].data = data.kw_vals;
+    charts.kw.update();
+    document.getElementById('kw-title').textContent = '本週熱門關鍵詞 Top ' + data.kw_labels.length;
+  } else {
+    kwCanvas.style.display = 'none';
+    kwEmpty.classList.remove('hidden');
+  }
+
+  // 來源
+  var srcCanvas = document.getElementById('srcChart');
+  var srcEmpty  = document.getElementById('src-empty');
+  if (data.src_labels.length > 0) {
+    srcCanvas.style.display = '';
+    srcEmpty.classList.add('hidden');
+    charts.src.data.labels = data.src_labels;
+    charts.src.data.datasets[0].data = data.src_vals;
+    charts.src.update();
+  } else {
+    srcCanvas.style.display = 'none';
+    srcEmpty.classList.remove('hidden');
+  }
+
+  // 明細表格
+  document.getElementById('table-title').textContent = '最新回饋明細（' + data.recent.length + ' 則）';
+  var tbody = document.getElementById('recentTbody');
+  tbody.innerHTML = '';
+  data.recent.forEach(function(d) {
+    var tr = document.createElement('tr');
+    tr.className = 'border-b border-slate-700 hover:bg-slate-700/30 transition-colors';
+    tr.innerHTML =
+      '<td class="py-2 px-3 text-xs text-slate-400 whitespace-nowrap">' + d.date + '</td>' +
+      '<td class="py-2 px-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:' + d.cat_color + '22;color:' + d.cat_color + '">' + d.cat + '</span></td>' +
+      '<td class="py-2 px-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:' + d.sent_color + '22;color:' + d.sent_color + '">' + d.sent + '</span></td>' +
+      '<td class="py-2 px-3 text-sm text-slate-200 max-w-xs truncate"><a href="' + d.url + '" target="_blank" class="hover:text-blue-400 transition-colors">' + d.summ + '</a></td>' +
+      '<td class="py-2 px-3 text-xs text-slate-400">' + d.kws + '</td>' +
+      '<td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap">' + d.src + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+// 初始渲染
+switchGame('all');
 </script>
 </body>
 </html>
