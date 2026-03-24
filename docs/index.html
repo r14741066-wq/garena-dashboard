@@ -19,24 +19,24 @@
 <div class="mb-6">
   <div class="text-xs tracking-widest text-blue-400 uppercase mb-1">Garena 台灣玩家聲音儀表板</div>
   <h1 class="text-2xl font-bold text-white">週間回饋總覽</h1>
-  <div class="text-sm text-slate-400 mt-1">資料區間：2026/03/18 – 2026/03/24　　最後更新：2026-03-24 02:12 UTC</div>
+  <div class="text-sm text-slate-400 mt-1">資料區間：2026/03/18 – 2026/03/24　　最後更新：2026-03-24 02:19 UTC</div>
 </div>
 
 <!-- KPI 卡片 -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
   <div class="card">
     <div class="text-xs text-slate-400 mb-2">本週總回饋</div>
-    <div class="stat-num text-white">5</div>
+    <div class="stat-num text-white">6</div>
     <div class="text-xs text-slate-500 mt-1">則</div>
   </div>
   <div class="card">
     <div class="text-xs text-slate-400 mb-2">負面比例</div>
-    <div class="stat-num text-red-400">60%</div>
-    <div class="text-xs text-slate-500 mt-1">3 則</div>
+    <div class="stat-num text-red-400">67%</div>
+    <div class="text-xs text-slate-500 mt-1">4 則</div>
   </div>
   <div class="card">
     <div class="text-xs text-slate-400 mb-2">正面比例</div>
-    <div class="stat-num text-green-400">20%</div>
+    <div class="stat-num text-green-400">17%</div>
     <div class="text-xs text-slate-500 mt-1">1 則</div>
   </div>
   <div class="card">
@@ -88,8 +88,22 @@
 
 <!-- 最新明細 -->
 <div class="card mb-6">
-  <div class="text-xs text-slate-400 uppercase tracking-wider mb-3">最新回饋明細（最近 5 則）</div>
+  <div class="text-xs text-slate-400 uppercase tracking-wider mb-3">最新回饋明細（最近 6 則）</div>
   <div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="border-b border-slate-600"><th class="py-2 px-3 text-xs text-slate-500 font-medium">日期</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">分類</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">情緒</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">摘要</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">關鍵詞</th><th class="py-2 px-3 text-xs text-slate-500 font-medium">來源</th></tr></thead><tbody>
+        <tr class="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
+          <td class="py-2 px-3 text-xs text-slate-400 whitespace-nowrap">2026-03-24</td>
+          <td class="py-2 px-3">
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#F9731622;color:#F97316">客服問題</span>
+          </td>
+          <td class="py-2 px-3">
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#EF444422;color:#EF4444">負面</span>
+          </td>
+          <td class="py-2 px-3 text-sm text-slate-200 max-w-xs truncate">
+            <a href="https://play.google.com/store/apps/details?id=com.dts.freefireth" target="_blank" class="hover:text-blue-400 transition-colors">玩家反映Facebook帳號遭異常封鎖導致無法登入遊戲，且找不到客服管道進行詢問與申訴。</a>
+          </td>
+          <td class="py-2 px-3 text-xs text-slate-400">帳號封鎖、Facebook登入、客服缺失</td>
+          <td class="py-2 px-3 text-xs text-slate-500 whitespace-nowrap">Google Play・Free Fire</td>
+        </tr>
         <tr class="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
           <td class="py-2 px-3 text-xs text-slate-400 whitespace-nowrap">2026-03-24</td>
           <td class="py-2 px-3">
@@ -183,7 +197,7 @@ new Chart(document.getElementById('trendChart'), {
     labels: ["03/18", "03/19", "03/20", "03/21", "03/22", "03/23", "03/24"],
     datasets: [{
       label: '回饋則數',
-      data: [0, 0, 0, 0, 0, 0, 5],
+      data: [0, 0, 0, 0, 0, 0, 6],
       borderColor: '#3b82f6',
       backgroundColor: 'rgba(59,130,246,0.15)',
       borderWidth: 2,
@@ -202,7 +216,7 @@ new Chart(document.getElementById('catChart'), {
   data: {
     labels: ["客服問題", "活動反應", "Bug回報", "付費體驗", "遊戲體驗", "其他"],
     datasets: [{
-      data: [0, 0, 1, 1, 2, 1],
+      data: [1, 0, 1, 1, 2, 1],
       backgroundColor: ["#F97316", "#3B82F6", "#EF4444", "#EAB308", "#22C55E", "#8B5CF6"],
       borderRadius: 4,
     }]
@@ -223,7 +237,7 @@ new Chart(document.getElementById('sentChart'), {
   data: {
     labels: ["正面", "負面", "中性"],
     datasets: [{
-      data: [1, 3, 1],
+      data: [1, 4, 1],
       backgroundColor: ["#22C55E", "#EF4444", "#94A3B8"],
       borderWidth: 0,
     }]
@@ -234,8 +248,8 @@ new Chart(document.getElementById('sentChart'), {
   }
 });
 
-new Chart(document.getElementById('kwChart'), {  type: 'bar',  data: {    labels: ["儲值", "鑽石未到帳", "付費問題", "沉迷遊戲", "高度投入", "配對機制", "實力不均", "連敗", "伺服器異常", "越南地區"],    datasets: [{ data: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], backgroundColor: '#8b5cf6', borderRadius: 4 }]  },  options: { indexAxis: 'y', plugins: { legend: { display: false } },    scales: { x: { ticks: { color: '#64748b' }, grid: { color: '#334155' } },              y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } } } }});
-new Chart(document.getElementById('srcChart'), {  type: 'bar',  data: {    labels: ["Google Play・Free Fire"],    datasets: [{ data: [5], backgroundColor: '#06b6d4', borderRadius: 4 }]  },  options: { plugins: { legend: { display: false } },    scales: { x: { ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },              y: { ticks: { color: '#64748b' }, grid: { color: '#334155' } } } }});
+new Chart(document.getElementById('kwChart'), {  type: 'bar',  data: {    labels: ["帳號封鎖", "Facebook登入", "客服缺失", "儲值", "鑽石未到帳", "付費問題", "沉迷遊戲", "高度投入", "配對機制", "實力不均"],    datasets: [{ data: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], backgroundColor: '#8b5cf6', borderRadius: 4 }]  },  options: { indexAxis: 'y', plugins: { legend: { display: false } },    scales: { x: { ticks: { color: '#64748b' }, grid: { color: '#334155' } },              y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } } } }});
+new Chart(document.getElementById('srcChart'), {  type: 'bar',  data: {    labels: ["Google Play・Free Fire"],    datasets: [{ data: [6], backgroundColor: '#06b6d4', borderRadius: 4 }]  },  options: { plugins: { legend: { display: false } },    scales: { x: { ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },              y: { ticks: { color: '#64748b' }, grid: { color: '#334155' } } } }});
 </script>
 </body>
 </html>
