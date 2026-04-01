@@ -36,6 +36,34 @@ class EmailError(Exception):
     pass
 
 
+def send_error_alert(step: str, error: str, config: Config) -> None:
+    """當自動化流程發生錯誤時，寄一封警告信通知。"""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    subject = f"⚠️ Garena 儀表板異常 — {step}"
+    html = (
+        "<div style='font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;'>"
+        f"<h2 style='color:#c53030;'>⚠️ 自動化流程異常</h2>"
+        f"<table style='width:100%;border-collapse:collapse;margin-bottom:16px;'>"
+        f"<tr><td style='padding:8px;color:#718096;width:80px;'>時間</td>"
+        f"<td style='padding:8px;font-weight:600;'>{now}</td></tr>"
+        f"<tr style='background:#f7fafc;'><td style='padding:8px;color:#718096;'>步驟</td>"
+        f"<td style='padding:8px;font-weight:600;color:#c53030;'>{step}</td></tr>"
+        f"</table>"
+        f"<div style='background:#fff5f5;border:1px solid #fed7d7;border-radius:6px;padding:14px;margin-bottom:16px;'>"
+        f"<div style='font-size:11px;color:#718096;margin-bottom:6px;'>錯誤訊息</div>"
+        f"<pre style='margin:0;font-size:13px;color:#742a2a;white-space:pre-wrap;'>{error}</pre>"
+        f"</div>"
+        f"<p style='color:#4a5568;font-size:13px;'>請檢查 <code>/tmp/garena-dashboard-error.log</code> 取得完整 log。</p>"
+        f"</div>"
+    )
+    plain = f"[Garena 儀表板異常]\n時間：{now}\n步驟：{step}\n\n錯誤：{error}"
+    try:
+        _send_smtp(subject, html, plain, config)
+        logger.info(f"異常通知已寄出：{step}")
+    except Exception as e:
+        logger.error(f"異常通知寄送失敗：{e}")
+
+
 def send_weekly_digest(report: WeeklyReport, config: Config,
                        game_summaries: Optional[dict] = None,
                        total_display: Optional[int] = None) -> bool:

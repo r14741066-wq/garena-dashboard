@@ -40,6 +40,15 @@ logger = logging.getLogger("main")
 # ── 主要流程 ────────────────────────────────────────────────
 
 
+def _alert(config: Config, step: str, error: str) -> None:
+    """寄錯誤通知信（失敗不拋例外）。"""
+    try:
+        from email_sender import send_error_alert
+        send_error_alert(step, error, config)
+    except Exception as e:
+        logger.error(f"無法寄出錯誤通知：{e}")
+
+
 def run_scrape(config: Config, dry_run: bool = False) -> bool:
     """
     完整執行抓取 → 去重 → 過濾 → Claude 分析 → 寫 Notion 流程。
@@ -67,6 +76,7 @@ def run_scrape(config: Config, dry_run: bool = False) -> bool:
             init_notion(config.notion_token, config.notion_items_db_id, config.notion_reports_db_id)
         except RuntimeError as e:
             logger.error(f"Notion 連線失敗，中止執行：{e}")
+            _alert(config, "Notion 連線失敗", str(e))
             return False
 
     # 1. 抓取
@@ -85,6 +95,7 @@ def run_scrape(config: Config, dry_run: bool = False) -> bool:
 
     if not all_raw:
         logger.warning("未抓到任何資料，本次跳過。")
+        _alert(config, "爬蟲全部回傳 0 筆", "四個平台（App Store、Google Play、PTT、Dcard）均未抓到資料，可能是網路問題或平台封鎖。")
         return False
 
     # 2. 去重 + 過濾
@@ -133,6 +144,7 @@ def run_scrape(config: Config, dry_run: bool = False) -> bool:
         build_dashboard(open_browser=False)
     except Exception as e:
         logger.warning(f"儀表板生成失敗（不影響主流程）：{e}")
+        _alert(config, "儀表板生成失敗", str(e))
 
     return True
 
@@ -191,6 +203,8 @@ def run_report(config: Config) -> bool:
     success = send_weekly_digest(report, config,
                                  game_summaries=game_summaries,
                                  total_display=dashboard_total)
+    if not success:
+        _alert(config, "週報寄送失敗", "send_weekly_digest 回傳 False，請確認 Gmail 設定是否正常。")
     dedup.log_run("report", 0, 0, len(analyses), success)
     return success
 
@@ -369,10 +383,20 @@ def main() -> None:
     if args.dry_run:
         run_scrape(config, dry_run=True)
     elif args.scrape:
-        success = run_scrape(config)
+        try:
+            success = run_scrape(config)
+        except Exception as e:
+            logger.exception("--scrape 發生未預期錯誤")
+            _alert(config, "未預期錯誤（--scrape）", str(e))
+            sys.exit(1)
         sys.exit(0 if success else 1)
     elif args.report:
-        success = run_report(config)
+        try:
+            success = run_report(config)
+        except Exception as e:
+            logger.exception("--report 發生未預期錯誤")
+            _alert(config, "未預期錯誤（--report）", str(e))
+            sys.exit(1)
         sys.exit(0 if success else 1)
     else:
         parser.print_help()
