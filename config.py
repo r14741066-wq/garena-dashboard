@@ -32,7 +32,8 @@ class Config:
     notion_reports_db_id: str = ""
 
     # 行為設定
-    days_lookback: int = 7
+    scrape_lookback_days: int = 2   # 每次抓取往回看幾天（日常排程用 1-2 天即可）
+    report_lookback_days: int = 7   # 週報 / 儀表板彙整幾天的資料
     max_items_per_source: int = 50
     batch_size_claude: int = 20
 
@@ -76,7 +77,8 @@ def load_config() -> Config:
         notion_token=os.environ["NOTION_TOKEN"].strip(),
         notion_items_db_id=os.environ["NOTION_ITEMS_DB_ID"].strip(),
         notion_reports_db_id=os.environ["NOTION_REPORTS_DB_ID"].strip(),
-        days_lookback=get_int("DAYS_LOOKBACK", 7),
+        scrape_lookback_days=get_int("SCRAPE_LOOKBACK_DAYS", 2),
+        report_lookback_days=get_int("REPORT_LOOKBACK_DAYS", 7),
         max_items_per_source=get_int("MAX_ITEMS_PER_SOURCE", 50),
         batch_size_claude=get_int("BATCH_SIZE_CLAUDE", 20),
     )

@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 
 APPS = {
     "appstore_freefire": {
-        "app_id":  "1175305978",
+        "app_id":  "1300146617",
         "display": "Free Fire（App Store）",
     },
     "appstore_aov": {
-        "app_id":  "1038378089",
+        "app_id":  "1089079153",
         "display": "傳說對決（App Store）",
     },
 }

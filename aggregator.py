@@ -22,7 +22,8 @@ class WeeklyReport:
     by_category: dict[str, int]
     by_sentiment: dict[str, int]
     top_keywords: list[tuple[str, int]]        # [(詞, 次數), ...]
-    negative_concentration: list[dict]         # [{"category": ..., "count": ..., "sample": ...}]
+    negative_concentration: list[dict]         # [{"category": ..., "count": ..., "samples": [...]}]
+    activity_voices: list[dict]                # 活動反應類別的正負聲音
     anomaly_sources: list[str]                 # 本週量體 > 2x 均值的來源
     generated_at: datetime
 
@@ -61,7 +62,10 @@ def build_weekly_report(
     top_keywords = _compute_top_keywords(analyses, n=10)
 
     # 負評最集中的問題
-    negative_concentration = _compute_negative_clusters(analyses, top_n=3)
+    negative_concentration = _compute_negative_clusters(analyses, top_n=4)
+
+    # 活動反應聲量
+    activity_voices = _compute_activity_voices(analyses)
 
     # 量體異常偵測
     anomaly_sources: list[str] = []
@@ -77,6 +81,7 @@ def build_weekly_report(
         by_sentiment=by_sentiment,
         top_keywords=top_keywords,
         negative_concentration=negative_concentration,
+        activity_voices=activity_voices,
         anomaly_sources=anomaly_sources,
         generated_at=now,
     )
@@ -101,8 +106,8 @@ def _compute_top_keywords(analyses: list[dict], n: int = 10) -> list[tuple[str, 
     return counter.most_common(n)
 
 
-def _compute_negative_clusters(analyses: list[dict], top_n: int = 3) -> list[dict]:
-    """找出負評最集中的類別，並提供範例引言。"""
+def _compute_negative_clusters(analyses: list[dict], top_n: int = 4) -> list[dict]:
+    """找出負評最集中的類別，每類提供多則引言摘要。"""
     negative = [a for a in analyses if a.get("sentiment") == "負面"]
     if not negative:
         return []
@@ -112,19 +117,62 @@ def _compute_negative_clusters(analyses: list[dict], top_n: int = 3) -> list[dic
         cat = a.get("category", "其他")
         by_category.setdefault(cat, []).append(a)
 
-    # 按數量排序
     sorted_cats = sorted(by_category.items(), key=lambda x: -len(x[1]))
 
     result = []
     for cat, items in sorted_cats[:top_n]:
-        # 取第一則的 summary 作為範例引言
-        sample = items[0].get("summary", items[0].get("body", "")[:60])
+        # 最多取 3 則不重複的 summary 作為引言
+        samples = []
+        seen = set()
+        for item in items:
+            s = item.get("summary") or item.get("body", "")[:80]
+            s = s.strip()
+            if s and s not in seen:
+                seen.add(s)
+                samples.append(s)
+            if len(samples) >= 3:
+                break
         result.append({
             "category": cat,
             "count": len(items),
-            "sample": sample,
+            "samples": samples,
+            # 向後相容
+            "sample": samples[0] if samples else "",
         })
     return result
+
+
+def _compute_activity_voices(analyses: list[dict]) -> list[dict]:
+    """彙整「活動反應」類別的正負聲音，反映本週行銷活動的玩家反應。"""
+    activity = [a for a in analyses if a.get("category") == "活動反應"]
+    if not activity:
+        return []
+
+    pos_items = [a for a in activity if a.get("sentiment") == "正面"]
+    neg_items = [a for a in activity if a.get("sentiment") == "負面"]
+    neu_items = [a for a in activity if a.get("sentiment") == "中性"]
+
+    def pick_samples(items, n=2):
+        samples = []
+        seen = set()
+        for item in items:
+            s = item.get("summary") or item.get("body", "")[:80]
+            s = s.strip()
+            if s and s not in seen:
+                seen.add(s)
+                samples.append(s)
+            if len(samples) >= n:
+                break
+        return samples
+
+    return [{
+        "total":    len(activity),
+        "pos":      len(pos_items),
+        "neg":      len(neg_items),
+        "neu":      len(neu_items),
+        "pos_samples": pick_samples(pos_items),
+        "neg_samples": pick_samples(neg_items),
+    }]
 
 
 def _detect_anomalies(

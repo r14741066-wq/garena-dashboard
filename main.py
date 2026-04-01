@@ -58,8 +58,8 @@ def run_scrape(config: Config, dry_run: bool = False) -> bool:
     logger.info("Garena 玩家聲音儀表板 — 開始抓取")
     logger.info("=" * 60)
 
-    since = datetime.utcnow() - timedelta(days=config.days_lookback)
-    logger.info(f"抓取範圍：{since.date()} 至今（{config.days_lookback} 天）")
+    since = datetime.utcnow() - timedelta(days=config.scrape_lookback_days)
+    logger.info(f"抓取範圍：{since.date()} 至今（{config.scrape_lookback_days} 天）")
 
     # 0. 驗證 Notion 連線（dry_run 跳過）
     if not dry_run:
@@ -155,7 +155,7 @@ def run_report(config: Config) -> bool:
         return False
 
     dedup = Deduplicator()
-    analyses = dedup.get_recent_analyses(days=config.days_lookback)
+    analyses = dedup.get_recent_analyses(days=config.report_lookback_days)
     baselines = dedup.get_source_baselines(weeks=4)
 
     if not analyses:
@@ -171,8 +171,26 @@ def run_report(config: Config) -> bool:
     except Exception as e:
         logger.warning(f"週報存 Notion 失敗（不影響寄信）：{e}")
 
+    # 產生各遊戲 AI 洞察（供週報使用），同時取得與儀表板一致的總則數
+    game_summaries = {}
+    dashboard_total = None
+    try:
+        from dashboard_generator import generate_ai_summary, load_data
+        all_data = load_data(config.report_lookback_days)
+        dashboard_total = len(all_data)
+        data_aov = [d for d in all_data if d.get("game") == "aov"]
+        data_ff  = [d for d in all_data if d.get("game") == "freefire"]
+        logger.info("正在產生各遊戲 AI 洞察摘要…")
+        game_summaries["aov"] = generate_ai_summary(data_aov, "傳說對決")
+        game_summaries["ff"]  = generate_ai_summary(data_ff,  "Free Fire")
+        logger.info("AI 洞察摘要完成")
+    except Exception as e:
+        logger.warning(f"AI 摘要產生失敗（不影響寄信）：{e}")
+
     # 寄信
-    success = send_weekly_digest(report, config)
+    success = send_weekly_digest(report, config,
+                                 game_summaries=game_summaries,
+                                 total_display=dashboard_total)
     dedup.log_run("report", 0, 0, len(analyses), success)
     return success
 

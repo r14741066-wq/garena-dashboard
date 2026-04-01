@@ -154,8 +154,9 @@ def deploy() -> bool:
 
     project = Path(__file__).parent
 
-    # git add + commit + push
-    _run(["git", "add", "docs/index.html"], cwd=project)
+    # git add + commit + push（包含程式碼變更）
+    _run(["git", "add", "docs/", "*.py", "scrapers/", "processing/",
+          "requirements.txt", ".env.example", "launchd/"], cwd=project)
     commit_result = _run(
         ["git", "commit", "-m", "auto: 更新儀表板"],
         cwd=project, check=False
